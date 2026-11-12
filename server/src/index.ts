@@ -1,25 +1,33 @@
-// Senha: DHTFoR6UbAYxaZp4
+import "dotenv/config";
 
 import express, { type Express } from "express";
 import mongoose from "mongoose";
-import financialRecordRouter from "./routes/financial-record.js"
+import financialRecordRouter from "./routes/financial-record.js";
 import cors from "cors";
 
 const app: Express = express();
 const port = Number(process.env.PORT) || 3001;
 
+const mongoURI = process.env.MONGODB_URI;
+
+if (!mongoURI) {
+  throw new Error("MONGODB_URI não configurada!");
+}
+
 app.use(express.json());
 app.use(cors());
 
-const mongoURI: string = "mongodb+srv://allanvicthor123456789_db_user:DHTFoR6UbAYxaZp4@rastreador.nsg2plv.mongodb.net/";
-
-mongoose
-    .connect(mongoURI)
-    .then(() => console.log("CONNECTED TO MONGODB!"))
-    .catch((err) => console.error("Failed to connect to MongoDB:", err));
-
 app.use("/financial-records", financialRecordRouter);
 
-app.listen(port, "0.0.0.0", () => {
-  console.log(`Server Running on Port ${port}`);
-});
+mongoose
+  .connect(mongoURI)
+  .then(() => {
+    console.log("CONNECTED TO MONGODB!");
+
+    app.listen(port, "0.0.0.0", () => {
+      console.log(`Server Running on Port ${port}`);
+    });
+  })
+  .catch((err) => {
+    console.error("Failed to connect to MongoDB:", err);
+  });
