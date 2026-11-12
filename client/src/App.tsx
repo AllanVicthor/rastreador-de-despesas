@@ -8,7 +8,7 @@ import { SignedIn, UserButton } from '@clerk/clerk-react';
 
 function App() {
   return (
-    <Router>
+    <Router basename={import.meta.env.BASE_URL}>
       <div className="app-container">
         <div className='navbar'>
           <Link to="/"> Painel </Link>
