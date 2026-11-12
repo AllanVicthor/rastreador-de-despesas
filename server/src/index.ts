@@ -1,4 +1,4 @@
-
+// Senha: DHTFoR6UbAYxaZp4
 
 import express, { type Express } from "express";
 import mongoose from "mongoose";
@@ -11,7 +11,7 @@ const port = Number(process.env.PORT) || 3001;
 app.use(express.json());
 app.use(cors());
 
-const mongoURI: string = "";
+const mongoURI: string = "mongodb+srv://allanvicthor123456789_db_user:DHTFoR6UbAYxaZp4@rastreador.nsg2plv.mongodb.net/";
 
 mongoose
     .connect(mongoURI)
