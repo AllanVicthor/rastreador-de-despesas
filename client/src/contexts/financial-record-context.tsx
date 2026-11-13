@@ -18,6 +18,8 @@ interface FinancialRecordsContextType {
     deleteRecord: (id: string) => void;
 }
 
+const API_URL = "https://rastreador-de-despesas.onrender.com/financial-records";
+
 export const FinancialRecordsContext = createContext<
     FinancialRecordsContextType | undefined
 >(undefined);
@@ -32,7 +34,9 @@ export const FinancialRecordsProvider = ({
 
     const fetchRecords = async () => {
         if (!user) return;
-        const response = await fetch(`http://localhost:3001/financial-records/getAllByUserID/${user.id}`
+
+        const response = await fetch(
+            `${API_URL}/getAllByUserID/${user.id}`
         );
 
         if (response.ok) {
@@ -47,7 +51,7 @@ export const FinancialRecordsProvider = ({
     }, [user]);
 
     const addRecord = async (record: FinancialRecord) => {
-        const response = await fetch("http://localhost:3001/financial-records/", {
+        const response = await fetch(`${API_URL}/`, {
             method: "POST",
             body: JSON.stringify(record),
             headers: {
@@ -64,15 +68,13 @@ export const FinancialRecordsProvider = ({
     };
 
     const updateRecord = async (id: string, newRecord: FinancialRecord) => {
-        const response = await fetch(
-            `http://localhost:3001/financial-records/${id}`,
-            {
-                method: "PUT",
-                body: JSON.stringify(newRecord),
-                headers: {
-                    "Content-Type": "application/json",
-                },
-            });
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "PUT",
+            body: JSON.stringify(newRecord),
+            headers: {
+                "Content-Type": "application/json",
+            },
+        });
 
         try {
             if (response.ok) {
@@ -91,25 +93,24 @@ export const FinancialRecordsProvider = ({
     };
 
     const deleteRecord = async (id: string) => {
-        const response = await fetch(
-            `http://localhost:3001/financial-records/${id}`,
-            {
-                method: "DELETE",
-            }
-        );
+        const response = await fetch(`${API_URL}/${id}`, {
+            method: "DELETE",
+        });
 
         try {
             if (response.ok) {
-                const deleteRecord = await response.json();
+                const deletedRecord = await response.json();
                 setRecords((prev) =>
-                    prev.filter((record) => record._id != deleteRecord._id)
+                    prev.filter((record) => record._id !== deletedRecord._id)
                 );
             }
         } catch (err) { }
     };
 
     return (
-        <FinancialRecordsContext.Provider value={{ records, addRecord, updateRecord, deleteRecord }}>
+        <FinancialRecordsContext.Provider
+            value={{ records, addRecord, updateRecord, deleteRecord }}
+        >
             {children}
         </FinancialRecordsContext.Provider>
     );
