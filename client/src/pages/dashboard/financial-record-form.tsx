@@ -1,34 +1,52 @@
 import { useState } from "react";
-import { useUser } from "@clerk/clerk-react";
+import { supabase } from "../../supabase";
 import { useFinancialRecords } from "../../contexts/financial-record-context";
 import "./financial-record.css";
 
 export const FinancialRecordForm = () => {
-    const [description, setDescription] = useState<string>("");
-    const [amount, setAmount] = useState<string>("");
-    const [category, setCategory] = useState<string>("");
-    const [paymentMethod, setPaymentMethod] = useState<string>("");
+    const [description, setDescription] = useState("");
+    const [amount, setAmount] = useState("");
+    const [category, setCategory] = useState("");
+    const [paymentMethod, setPaymentMethod] = useState("");
+    const [loading, setLoading] = useState(false);
+
     const { addRecord } = useFinancialRecords();
 
-    const { user } = useUser();
-
-    const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
         event.preventDefault();
+        setLoading(true);
 
-        const newRecord = {
-            userId: user?.id ?? "",
-            date: new Date(),
-            description: description,
-            amount: parseFloat(amount),
-            category: category,
-            paymentMethod: paymentMethod,
-        };
+        try {
+            const {
+                data: { session },
+            } = await supabase.auth.getSession();
 
-        addRecord(newRecord);
-        setDescription("");
-        setAmount("");
-        setCategory("");
-        setPaymentMethod("");
+            if (!session) {
+                alert("Você precisa estar autenticado para adicionar um registro.");
+                return;
+            }
+
+            const newRecord = {
+                userId: session.user.id,
+                date: new Date(),
+                description,
+                amount: parseFloat(amount),
+                category,
+                paymentMethod,
+            };
+
+            await addRecord(newRecord);
+
+            setDescription("");
+            setAmount("");
+            setCategory("");
+            setPaymentMethod("");
+        } catch (error) {
+            console.error("Erro ao adicionar registro:", error);
+            alert("Não foi possível adicionar o registro.");
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -44,16 +62,20 @@ export const FinancialRecordForm = () => {
                         onChange={(e) => setDescription(e.target.value)}
                     />
                 </div>
+
                 <div className="form-field">
                     <label>Valor:</label>
                     <input
                         type="number"
+                        step="0.01"
+                        min="0.01"
                         required
                         className="input"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                     />
                 </div>
+
                 <div className="form-field">
                     <label>Categoria:</label>
                     <select
@@ -71,6 +93,7 @@ export const FinancialRecordForm = () => {
                         <option value="Outros">Outros</option>
                     </select>
                 </div>
+
                 <div className="form-field">
                     <label>Método de pagamento:</label>
                     <select
@@ -85,8 +108,9 @@ export const FinancialRecordForm = () => {
                         <option value="Pix">Pix</option>
                     </select>
                 </div>
-                <button type="submit" className="button">
-                    Adicionar registro
+
+                <button type="submit" className="button" disabled={loading}>
+                    {loading ? "Adicionando..." : "Adicionar registro"}
                 </button>
             </form>
         </div>

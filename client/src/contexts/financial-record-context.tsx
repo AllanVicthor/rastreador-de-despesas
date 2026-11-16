@@ -1,5 +1,5 @@
-import { useUser } from "@clerk/clerk-react";
 import { createContext, useContext, useEffect, useState } from "react";
+import { supabase } from "../supabase";
 
 export interface FinancialRecord {
     _id?: string;
@@ -30,81 +30,134 @@ export const FinancialRecordsProvider = ({
     children: React.ReactNode;
 }) => {
     const [records, setRecords] = useState<FinancialRecord[]>([]);
-    const { user } = useUser();
+    const [userId, setUserId] = useState<string | null>(null);
+
+    useEffect(() => {
+        supabase.auth.getSession().then(({ data }) => {
+            setUserId(data.session?.user.id ?? null);
+        });
+
+        const {
+            data: { subscription },
+        } = supabase.auth.onAuthStateChange((_event, session) => {
+            setUserId(session?.user.id ?? null);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const getAuthHeaders = async () => {
+        const {
+            data: { session },
+        } = await supabase.auth.getSession();
+
+        if (!session) {
+            throw new Error("Usuário não autenticado.");
+        }
+
+        return {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+        };
+    };
 
     const fetchRecords = async () => {
-        if (!user) return;
+        if (!userId) {
+            setRecords([]);
+            return;
+        }
 
-        const response = await fetch(
-            `${API_URL}/getAllByUserID/${user.id}`
-        );
+        try {
+            const headers = await getAuthHeaders();
 
-        if (response.ok) {
-            const records = await response.json();
-            console.log(records);
-            setRecords(records);
+            const response = await fetch(
+                `${API_URL}/getAllByUserID/${userId}`,
+                { headers }
+            );
+
+            if (response.ok) {
+                const data = await response.json();
+                setRecords(data);
+            } else {
+                console.error("Erro ao buscar registros:", response.status);
+            }
+        } catch (error) {
+            console.error("Erro ao buscar registros:", error);
         }
     };
 
     useEffect(() => {
         fetchRecords();
-    }, [user]);
+    }, [userId]);
 
     const addRecord = async (record: FinancialRecord) => {
-        const response = await fetch(`${API_URL}/`, {
-            method: "POST",
-            body: JSON.stringify(record),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
         try {
+            const headers = await getAuthHeaders();
+
+            const response = await fetch(`${API_URL}/`, {
+                method: "POST",
+                body: JSON.stringify(record),
+                headers,
+            });
+
             if (response.ok) {
                 const newRecord = await response.json();
                 setRecords((prev) => [...prev, newRecord]);
+            } else {
+                console.error("Erro ao adicionar registro:", response.status);
             }
-        } catch (err) { }
+        } catch (error) {
+            console.error("Erro ao adicionar registro:", error);
+        }
     };
 
     const updateRecord = async (id: string, newRecord: FinancialRecord) => {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: "PUT",
-            body: JSON.stringify(newRecord),
-            headers: {
-                "Content-Type": "application/json",
-            },
-        });
-
         try {
+            const headers = await getAuthHeaders();
+
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "PUT",
+                body: JSON.stringify(newRecord),
+                headers,
+            });
+
             if (response.ok) {
-                const newRecord = await response.json();
+                const updatedRecord = await response.json();
+
                 setRecords((prev) =>
-                    prev.map((record) => {
-                        if (record._id === id) {
-                            return newRecord;
-                        } else {
-                            return record;
-                        }
-                    })
+                    prev.map((record) =>
+                        record._id === id ? updatedRecord : record
+                    )
                 );
+            } else {
+                console.error("Erro ao atualizar registro:", response.status);
             }
-        } catch (err) { }
+        } catch (error) {
+            console.error("Erro ao atualizar registro:", error);
+        }
     };
 
     const deleteRecord = async (id: string) => {
-        const response = await fetch(`${API_URL}/${id}`, {
-            method: "DELETE",
-        });
-
         try {
+            const headers = await getAuthHeaders();
+
+            const response = await fetch(`${API_URL}/${id}`, {
+                method: "DELETE",
+                headers,
+            });
+
             if (response.ok) {
                 const deletedRecord = await response.json();
+
                 setRecords((prev) =>
                     prev.filter((record) => record._id !== deletedRecord._id)
                 );
+            } else {
+                console.error("Erro ao excluir registro:", response.status);
             }
-        } catch (err) { }
+        } catch (error) {
+            console.error("Erro ao excluir registro:", error);
+        }
     };
 
     return (
