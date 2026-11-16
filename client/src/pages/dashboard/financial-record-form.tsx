@@ -68,7 +68,7 @@ export const FinancialRecordForm = () => {
                     <input
                         type="number"
                         step="0.01"
-                        min="0.01"
+                        min="-999999999"
                         required
                         className="input"
                         value={amount}
