@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { useFinancialRecords } from "../../contexts/financial-record-context";
 import type { FinancialRecord } from "../../contexts/financial-record-context";
 import { useTable } from "react-table";
-import type { Column, CellProps, } from "react-table";
+import type { Column, CellProps } from "react-table";
 import "./financial-record.css";
 
 interface EditableCellProps extends CellProps<FinancialRecord> {
@@ -26,7 +26,8 @@ const EditableCell: React.FC<EditableCellProps> = ({
     };
 
     return (
-        <div onClick={() => editable && setIsEditing(true)}
+        <div
+            onClick={() => editable && setIsEditing(true)}
             style={{ cursor: editable ? "pointer" : "default" }}
         >
             {isEditing ? (
@@ -54,54 +55,83 @@ export const FinancialRecordList = () => {
         updateRecord(id ?? "", { ...records[rowIndex], [columnId]: value });
     };
 
-    const columns: Array<Column<FinancialRecord>> = useMemo(() => [
-        {
-            Header: "Descrição",
-            accessor: "description",
-            Cell: (props) => (
-                <EditableCell {...props} updateRecord={updateCellRecord} editable={true} />
-            ),
-        },
-        {
-            Header: "Valor",
-            accessor: "amount",
-            Cell: (props) => (
-                <EditableCell {...props} updateRecord={updateCellRecord} editable={true} />
-            ),
-        },
-        {
-            Header: "Categoria",
-            accessor: "category",
-            Cell: (props) => (
-                <EditableCell {...props} updateRecord={updateCellRecord} editable={true} />
-            ),
-        },
-        {
-            Header: "Método de pagamento",
-            accessor: "paymentMethod",
-            Cell: (props) => (
-                <EditableCell {...props} updateRecord={updateCellRecord} editable={true} />
-            ),
-        },
-        {
-            Header: "Data",
-            accessor: "date",
-            Cell: (props) => (
-                <EditableCell {...props} updateRecord={updateCellRecord} editable={false} />
-            ),
-        },
-        {
-            Header: "Deletar",
-            id: "delete",
-            Cell: ({ row }) => (
-                <button onClick={() => deleteRecord(row.original._id ?? "")}
-                    className="button"
-                >
-                    Deletar
-                </button>
-            ),
-        },
-    ],
+    const columns: Array<Column<FinancialRecord>> = useMemo(
+        () => [
+            {
+                Header: "Descrição",
+                accessor: "description",
+                Cell: (props) => (
+                    <EditableCell
+                        {...props}
+                        updateRecord={updateCellRecord}
+                        editable={true}
+                    />
+                ),
+            },
+            {
+                Header: "Valor",
+                accessor: "amount",
+                Cell: (props) => (
+                    <EditableCell
+                        {...props}
+                        updateRecord={updateCellRecord}
+                        editable={true}
+                    />
+                ),
+            },
+            {
+                Header: "Categoria",
+                accessor: "category",
+                Cell: (props) => (
+                    <EditableCell
+                        {...props}
+                        updateRecord={updateCellRecord}
+                        editable={true}
+                    />
+                ),
+            },
+            {
+                Header: "Método de pagamento",
+                accessor: "paymentMethod",
+                Cell: (props) => (
+                    <EditableCell
+                        {...props}
+                        updateRecord={updateCellRecord}
+                        editable={true}
+                    />
+                ),
+            },
+            {
+                Header: "Data",
+                accessor: "date",
+                Cell: ({ value }) => {
+                    const date = new Date(value);
+
+                    return Number.isNaN(date.getTime())
+                        ? "Data inválida"
+                        : date.toLocaleString("pt-BR", {
+                            timeZone: "America/Sao_Paulo",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                        });
+                },
+            },
+            {
+                Header: "Deletar",
+                id: "delete",
+                Cell: ({ row }) => (
+                    <button
+                        onClick={() => deleteRecord(row.original._id ?? "")}
+                        className="button"
+                    >
+                        Deletar
+                    </button>
+                ),
+            },
+        ],
         [records]
     );
 
@@ -110,6 +140,7 @@ export const FinancialRecordList = () => {
             columns,
             data: records,
         });
+
     return (
         <div className="table-container">
             <table {...getTableProps()} className="table">
@@ -117,18 +148,24 @@ export const FinancialRecordList = () => {
                     {headerGroups.map((hg) => (
                         <tr {...hg.getHeaderGroupProps()}>
                             {hg.headers.map((column) => (
-                                <th {...column.getHeaderProps()}> {column.render("Header")} </th>
+                                <th {...column.getHeaderProps()}>
+                                    {column.render("Header")}
+                                </th>
                             ))}
                         </tr>
                     ))}
                 </thead>
+
                 <tbody {...getTableBodyProps()}>
                     {rows.map((row) => {
                         prepareRow(row);
+
                         return (
                             <tr {...row.getRowProps()}>
                                 {row.cells.map((cell) => (
-                                    <td {...cell.getCellProps()}> {cell.render("Cell")} </td>
+                                    <td {...cell.getCellProps()}>
+                                        {cell.render("Cell")}
+                                    </td>
                                 ))}
                             </tr>
                         );
