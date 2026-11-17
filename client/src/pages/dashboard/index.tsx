@@ -20,7 +20,7 @@ export const Dashboard = () => {
             const fullName = data.user.user_metadata?.full_name;
 
             if (typeof fullName === "string" && fullName.trim()) {
-                setFirstName(fullName.trim().split(" ")[0]);
+                setFirstName(fullName.trim().split(/\s+/)[0]);
             } else {
                 const email = data.user.email ?? "";
                 setFirstName(email.split("@")[0]);
