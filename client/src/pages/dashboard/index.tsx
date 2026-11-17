@@ -1,19 +1,33 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { FinancialRecordForm } from "./financial-record-form";
 import { FinancialRecordList } from "./financial-record-list";
 import { useFinancialRecords } from "../../contexts/financial-record-context";
 import { supabase } from "../../supabase";
-import { useMemo } from "react";
 
 export const Dashboard = () => {
     const [firstName, setFirstName] = useState("");
     const { records } = useFinancialRecords();
 
     useEffect(() => {
-        supabase.auth.getUser().then(({ data }) => {
-            const email = data.user?.email ?? "";
-            setFirstName(email.split("@")[0]);
-        });
+        const loadUserName = async () => {
+            const { data, error } = await supabase.auth.getUser();
+
+            if (error || !data.user) {
+                setFirstName("usuário");
+                return;
+            }
+
+            const fullName = data.user.user_metadata?.full_name;
+
+            if (typeof fullName === "string" && fullName.trim()) {
+                setFirstName(fullName.trim().split(" ")[0]);
+            } else {
+                const email = data.user.email ?? "";
+                setFirstName(email.split("@")[0]);
+            }
+        };
+
+        loadUserName();
     }, []);
 
     const total = useMemo(() => {
@@ -23,7 +37,7 @@ export const Dashboard = () => {
     return (
         <div className="dashboard-container">
             <h1>
-                Bem-vindo {firstName}! Aqui estão suas finanças:
+                Bem-vindo, {firstName}! Aqui estão suas finanças:
             </h1>
 
             <FinancialRecordForm />
