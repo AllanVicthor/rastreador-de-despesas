@@ -4,6 +4,7 @@ import { supabase } from "../../supabase";
 
 export const Auth = () => {
     const [isLogin, setIsLogin] = useState(true);
+    const [name, setName] = useState("");
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [loading, setLoading] = useState(true);
@@ -39,15 +40,27 @@ export const Auth = () => {
                 setMessage(error.message);
             }
         } else {
+            if (!name.trim()) {
+                setMessage("Informe seu nome completo.");
+                return;
+            }
+
             const { data, error } = await supabase.auth.signUp({
                 email,
                 password,
+                options: {
+                    data: {
+                        full_name: name.trim(),
+                    },
+                },
             });
 
             if (error) {
                 setMessage(error.message);
             } else if (!data.session) {
-                setMessage("Cadastro realizado! Verifique seu e-mail para confirmar a conta.");
+                setMessage(
+                    "Cadastro realizado! Verifique seu e-mail para confirmar a conta."
+                );
             }
         }
     };
@@ -65,6 +78,16 @@ export const Auth = () => {
             <h2>{isLogin ? "Entrar" : "Criar conta"}</h2>
 
             <form onSubmit={handleSubmit}>
+                {!isLogin && (
+                    <input
+                        type="text"
+                        placeholder="Seu nome completo"
+                        value={name}
+                        onChange={(event) => setName(event.target.value)}
+                        required
+                    />
+                )}
+
                 <input
                     type="email"
                     placeholder="Seu e-mail"
